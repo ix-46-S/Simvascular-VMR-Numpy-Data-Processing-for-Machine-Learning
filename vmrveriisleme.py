@@ -153,8 +153,8 @@ for modeladı in os.listdir(modeller): #//! burası
         os.makedirs(os.path.join(ciktidosya, "traningirdi"), exist_ok=True)
         os.makedirs(os.path.join(ciktidosya, "trainçıktı"), exist_ok=True)
 
-        modelkoordinatgirdilistesi = []
-        modelçıktılistesi = []
+        Tüm_girdiler = []
+        Tüm_çıktılar = []
 
         for wssadı in wssverisi:
             zamanadımı = (wssadı.split("_")[1])
@@ -167,29 +167,24 @@ for modeladı in os.listdir(modeller): #//! burası
             if hizadı not in tümdiziler:
                 print(f"   ⚠️ Time step {zamanadımı}: '{hizadı}' not found, velocity taken as zero vector.")
 
-            for n_id in range(noktasayısı):
-                girdi = [koordinatlar[n_id, 0], koordinatlar[n_id, 1], koordinatlar[n_id, 2]]
-                cikti = [
-                    wssvektörleri[n_id, 0], wssvektörleri[n_id, 1], wssvektörleri[n_id, 2],
-                    hızvektörleri[n_id, 0], hızvektörleri[n_id, 1], hızvektörleri[n_id, 2]
-                ]
-                modelkoordinatgirdilistesi.append(girdi)
-                modelçıktılistesi.append(cikti)
+            Tüm_girdiler.append(koordinatlar)
 
-        print(f"📦 Number of input/output rows collected: {len(modelkoordinatgirdilistesi)} (expected to be number of points x number of time steps)")
+            çıktı_bloğu = np.hstack((wssvektörleri, hızvektörleri))
+            Tüm_çıktılar.append(çıktı_bloğu)
+
+        print(f"📦 number of blocks collected: {len(Tüm_girdiler)} zaman adımı × {noktasayısı} nokta = {len(Tüm_girdiler)*noktasayısı} satır")
 
 
-        if len(modelkoordinatgirdilistesi) > 0:
-            X_nihai = np.array(modelkoordinatgirdilistesi, dtype=np.float32)
-            y_nihai = np.array(modelçıktılistesi, dtype=np.float32)
-
+        if len(Tüm_girdiler) > 0:
+            X_nihai = np.vstack(Tüm_girdiler).astype(np.float32)
+            y_nihai = np.vstack(Tüm_çıktılar).astype(np.float32)
             np.save(os.path.join(ciktidosya, "traningirdi", f"hasta_{modeladı}_input.npy"), X_nihai)
             np.save(os.path.join(ciktidosya, "trainçıktı", f"hasta_{modeladı}_target.npy"), y_nihai)
             
-            print(f"✅ Patient {modeladı}'s AI dataset successfully prepared!")
+            print(f"✅ Patient {modeladı}'s AI dataset successfully prepared (Vectorized)!")
             print(f"💾 Saved -> input shape: {X_nihai.shape}, target shape: {y_nihai.shape}")
             
-            del modelkoordinatgirdilistesi, modelçıktılistesi, X_nihai, y_nihai
+            del Tüm_girdiler, Tüm_çıktılar, X_nihai, y_nihai
         else:
             print(f"❌ No data was collected for {modeladı}, nothing was saved!")
 
